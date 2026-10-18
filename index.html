@@ -6,7 +6,6 @@
     <title>Gerador de Reels - Talk Flow</title>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Plus+Jakarta+Sans:wght@400;600&display=swap" rel="stylesheet">
     
-    <!-- Todo o seu Estilo Visual (CSS) está agora aqui dentro -->
     <style>
         :root {
             --azul-marinho: #112150;
@@ -103,7 +102,6 @@
         </div>
     </div>
 
-    <!-- Todo o seu Cérebro (JavaScript) está agora aqui dentro -->
     <script>
         function testarCanvas() {
             const canvas = document.getElementById('videoCanvas');
@@ -167,59 +165,47 @@
             ctx.fillText('LEIA A LEGENDA 👇', canvas.width / 2, 1700);
         };
 
-        let gravador;
-        let pedacosVideo = [];
-
-        function gravarVideo() {
-            const canvas = document.getElementById('videoCanvas');
+        // --- NOVA FUNÇÃO GRAVAR VIDEO (LIGAÇÃO À INTELIGÊNCIA ARTIFICIAL) ---
+        async function gravarVideo() {
             const btn = document.getElementById('btnGravar');
-            
-            const inputTempo = document.getElementById('tempoVideo').value;
-            const tempoEmSegundos = parseInt(inputTempo) || 15;
-            const tempoEmMilissegundos = tempoEmSegundos * 1000;
-            
-            testarCanvas();
+            const roteiro = document.getElementById('textoRoteiro').value;
 
-            if (document.getElementById('textoRoteiro').value.trim() === '') {
-                alert("Digite um texto antes de gravar!");
+            if (roteiro.trim() === '') {
+                alert("Escreva um roteiro antes de gerar o vídeo!");
                 return;
             }
 
-            btn.innerText = `🔴 A gravar... Aguarde (${tempoEmSegundos}s)`;
-            btn.style.backgroundColor = "red";
+            // Altera o botão para mostrar que a IA está a processar
+            btn.innerText = "⏳ A enviar para a IA... (Aguarde)";
+            btn.style.backgroundColor = "orange";
             btn.style.color = "white";
             btn.disabled = true;
 
-            const stream = canvas.captureStream(30);
-            gravador = new MediaRecorder(stream);
-            pedacosVideo = [];
+            try {
+                // Envia o texto para a pasta segura /api/gerar
+                const resposta = await fetch('/api/gerar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ roteiro: roteiro })
+                });
 
-            gravador.ondataavailable = function(evento) {
-                if (evento.data.size > 0) {
-                    pedacosVideo.push(evento.data);
+                const dados = await resposta.json();
+
+                if (dados.sucesso) {
+                    // Confirma que a comunicação funcionou
+                    alert(dados.mensagem + "\n\nO seu texto: " + dados.roteiroRecebido);
+                } else {
+                    alert("Erro: " + dados.erro);
                 }
-            };
+            } catch (erro) {
+                alert("Falha na comunicação com o servidor.");
+            }
 
-            gravador.onstop = function() {
-                const blob = new Blob(pedacosVideo, { type: 'video/mp4' });
-                const url = URL.createObjectURL(blob);
-                
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `Reel_TalkFlow_${tempoEmSegundos}s.mp4`;
-                link.click();
-
-                btn.innerText = "Gravar e Baixar Vídeo";
-                btn.style.backgroundColor = "var(--azul-marinho)";
-                btn.style.color = "var(--rose)";
-                btn.disabled = false;
-            };
-
-            gravador.start();
-
-            setTimeout(() => {
-                gravador.stop();
-            }, tempoEmMilissegundos);
+            // Volta a colocar o botão normal
+            btn.innerText = "Gravar e Baixar Vídeo";
+            btn.style.backgroundColor = "var(--azul-marinho)";
+            btn.style.color = "var(--rose)";
+            btn.disabled = false;
         }
     </script>
 </body>
