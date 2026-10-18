@@ -65,6 +65,7 @@
             font-size: 16px;
             width: 100%;
             transition: opacity 0.2s;
+            margin-bottom: 10px;
         }
         button:hover {
             opacity: 0.9;
@@ -85,15 +86,15 @@
             <label>Roteiro do Vídeo:</label>
             <textarea id="textoRoteiro" placeholder="Digite o texto do vídeo aqui..."></textarea>
             
-            <button onclick="testarCanvas()">Testar Visual</button>
+            <button onclick="testarCanvas()">Testar Visual (Ver Tudo)</button>
             
-            <div style="margin-top: 20px;">
+            <div style="margin-top: 10px;">
                 <label>Duração do Vídeo (em segundos):</label>
-                <input type="number" id="tempoVideo" value="15" min="5" max="60" style="width: 100%; box-sizing: border-box; padding: 10px; margin-top: 5px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ccc; font-family: var(--fonte-texto); font-size: 16px;">
+                <input type="number" id="tempoVideo" value="10" min="5" max="60" style="width: 100%; box-sizing: border-box; padding: 10px; margin-top: 5px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ccc; font-family: var(--fonte-texto); font-size: 16px;">
             </div>
 
-            <button id="btnGravar" onclick="gravarVideo()" style="background-color: var(--azul-marinho); color: var(--rose);">
-                Gravar e Baixar Vídeo
+            <button id="btnGravar" onclick="gravarVideoAnimado()" style="background-color: var(--azul-marinho); color: var(--rose);">
+                Gravar Vídeo Animado 🎬
             </button>
         </div>
         
@@ -103,20 +104,25 @@
     </div>
 
     <script>
-        function testarCanvas() {
+        // Função principal que desenha o quadro (agora aceita um limite de palavras para criar o efeito de animação)
+        function desenharQuadro(texto, limitePalavras) {
             const canvas = document.getElementById('videoCanvas');
             const ctx = canvas.getContext('2d');
-            const texto = document.getElementById('textoRoteiro').value;
-
+            
+            // Fundo e CTA
             ctx.fillStyle = '#112150';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.font = '600 45px "Plus Jakarta Sans"';
+            ctx.fillStyle = '#DCC591';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('LEIA A LEGENDA 👇', canvas.width / 2, 1700);
 
             if (texto.trim() === '') return;
 
+            // Configuração da fonte principal
             ctx.font = 'bold 80px "Cormorant Garamond"';
             ctx.fillStyle = '#F4E7D8';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
 
             const maxLargura = 900;
             const alturaLinha = 100;
@@ -125,87 +131,122 @@
 
             const palavras = texto.split(' ');
             let linhaAtual = '';
-            let linhas = [];
+            let linhasFull = [];
 
+            // Calcula onde cada linha deve ser quebrada (baseado no texto completo)
             for (let i = 0; i < palavras.length; i++) {
                 let testeLinha = linhaAtual + palavras[i] + ' ';
                 let metricas = ctx.measureText(testeLinha);
                 
                 if (metricas.width > maxLargura && i > 0) {
-                    linhas.push(linhaAtual);
+                    linhasFull.push(linhaAtual.trim());
                     linhaAtual = palavras[i] + ' ';
                 } else {
                     linhaAtual = testeLinha;
                 }
             }
-            linhas.push(linhaAtual);
+            linhasFull.push(linhaAtual.trim());
 
-            y = y - ((linhas.length - 1) * alturaLinha) / 2;
+            // Centraliza o bloco de texto
+            y = y - ((linhasFull.length - 1) * alturaLinha) / 2;
 
-            for (let j = 0; j < linhas.length; j++) {
-                ctx.fillText(linhas[j], x, y + (j * alturaLinha));
+            // Desenha apenas a quantidade de palavras permitida pelo limiteAtual
+            let palavrasDesenhadas = 0;
+
+            for (let j = 0; j < linhasFull.length; j++) {
+                let palavrasDaLinha = linhasFull[j].split(' ');
+                let linhaParaDesenhar = [];
+                
+                for (let k = 0; k < palavrasDaLinha.length; k++) {
+                    if (palavrasDesenhadas < limitePalavras) {
+                        linhaParaDesenhar.push(palavrasDaLinha[k]);
+                        palavrasDesenhadas++;
+                    }
+                }
+                
+                if (linhaParaDesenhar.length > 0) {
+                    ctx.fillText(linhaParaDesenhar.join(' '), x, y + (j * alturaLinha));
+                }
             }
-
-            ctx.font = '600 45px "Plus Jakarta Sans"';
-            ctx.fillStyle = '#DCC591';
-            ctx.fillText('LEIA A LEGENDA 👇', canvas.width / 2, 1700);
         }
 
+        // Mostra o texto todo de uma vez (para testar o visual)
+        function testarCanvas() {
+            const texto = document.getElementById('textoRoteiro').value;
+            desenharQuadro(texto, 9999); // Limite gigante para mostrar tudo
+        }
+
+        // Inicia com o fundo limpo
         window.onload = function() {
-            const canvas = document.getElementById('videoCanvas');
-            const ctx = canvas.getContext('2d');
-            
-            ctx.fillStyle = '#112150';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            ctx.font = '600 45px "Plus Jakarta Sans"';
-            ctx.fillStyle = '#DCC591';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('LEIA A LEGENDA 👇', canvas.width / 2, 1700);
+            desenharQuadro('', 0);
         };
 
-        // --- NOVA FUNÇÃO GRAVAR VIDEO (LIGAÇÃO À INTELIGÊNCIA ARTIFICIAL) ---
-        async function gravarVideo() {
-            const btn = document.getElementById('btnGravar');
-            const roteiro = document.getElementById('textoRoteiro').value;
+        let gravador;
+        let animacaoIntervalo;
 
-            if (roteiro.trim() === '') {
-                alert("Escreva um roteiro antes de gerar o vídeo!");
+        function gravarVideoAnimado() {
+            const canvas = document.getElementById('videoCanvas');
+            const btn = document.getElementById('btnGravar');
+            const texto = document.getElementById('textoRoteiro').value;
+            const tempoEmSegundos = parseInt(document.getElementById('tempoVideo').value) || 10;
+            
+            if (texto.trim() === '') {
+                alert("Escreva um roteiro antes de gravar!");
                 return;
             }
 
-            // Altera o botão para mostrar que a IA está a processar
-            btn.innerText = "⏳ A enviar para a IA... (Aguarde)";
-            btn.style.backgroundColor = "orange";
+            btn.innerText = `🔴 A gravar... Aguarde (${tempoEmSegundos}s)`;
+            btn.style.backgroundColor = "red";
             btn.style.color = "white";
             btn.disabled = true;
 
-            try {
-                // Envia o texto para a pasta segura /api/gerar
-                const resposta = await fetch('/api/gerar', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ roteiro: roteiro })
-                });
+            const palavrasTotais = texto.split(' ').length;
+            let palavrasAtuais = 1;
+            
+            // Desenha a primeira palavra imediatamente
+            desenharQuadro(texto, palavrasAtuais);
 
-                const dados = await resposta.json();
+            // Inicia a captura de vídeo
+            const stream = canvas.captureStream(30); // 30 frames por segundo
+            gravador = new MediaRecorder(stream);
+            let pedacosVideo = [];
 
-                if (dados.sucesso) {
-                    // Confirma que a comunicação funcionou
-                    alert(dados.mensagem + "\n\nO seu texto: " + dados.roteiroRecebido);
-                } else {
-                    alert("Erro: " + dados.erro);
-                }
-            } catch (erro) {
-                alert("Falha na comunicação com o servidor.");
-            }
+            gravador.ondataavailable = function(e) {
+                if (e.data.size > 0) pedacosVideo.push(e.data);
+            };
 
-            // Volta a colocar o botão normal
-            btn.innerText = "Gravar e Baixar Vídeo";
-            btn.style.backgroundColor = "var(--azul-marinho)";
-            btn.style.color = "var(--rose)";
-            btn.disabled = false;
+            gravador.onstop = function() {
+                clearInterval(animacaoIntervalo);
+                
+                const blob = new Blob(pedacosVideo, { type: 'video/mp4' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `Reel_TalkFlow_Animado.mp4`;
+                link.click();
+
+                btn.innerText = "Gravar Vídeo Animado 🎬";
+                btn.style.backgroundColor = "var(--azul-marinho)";
+                btn.style.color = "var(--rose)";
+                btn.disabled = false;
+            };
+
+            gravador.start();
+
+            // Lógica de velocidade da animação: 
+            // O texto deve terminar de aparecer a 80% do vídeo, para sobrar tempo do aluno ler a frase completa no final.
+            const tempoParaAnimar = (tempoEmSegundos * 1000) * 0.8; 
+            const velocidadeMs = tempoParaAnimar / palavrasTotais;
+
+            animacaoIntervalo = setInterval(() => {
+                palavrasAtuais++;
+                desenharQuadro(texto, palavrasAtuais);
+            }, velocidadeMs);
+
+            // Para a gravação quando o tempo escolhido acabar
+            setTimeout(() => {
+                gravador.stop();
+            }, tempoEmSegundos * 1000);
         }
     </script>
 </body>
