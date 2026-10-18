@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Reels - Talk Flow</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Plus+Jakarta+Sans:wght@400;600&display=swap" rel="stylesheet">
+    
+    <!-- Todo o seu Estilo Visual (CSS) está agora aqui dentro -->
+    <style>
+        :root {
+            --azul-marinho: #112150;
+            --dourado: #DCC591;
+            --rose: #F4E7D8;
+            --fonte-titulo: 'Cormorant Garamond', serif;
+            --fonte-texto: 'Plus Jakarta Sans', sans-serif;
+        }
+        body {
+            background-color: var(--rose);
+            font-family: var(--fonte-texto);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            display: flex;
+            gap: 50px;
+            max-width: 1000px;
+            width: 100%;
+            align-items: flex-start;
+        }
+        .painel {
+            flex: 1;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(17, 33, 80, 0.1);
+        }
+        h1 {
+            color: var(--azul-marinho);
+            font-family: var(--fonte-titulo);
+            margin-top: 0;
+        }
+        textarea {
+            width: 100%;
+            box-sizing: border-box;
+            height: 150px;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+            font-family: var(--fonte-texto);
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            resize: vertical;
+        }
+        button {
+            background-color: var(--dourado);
+            color: var(--azul-marinho);
+            font-family: var(--fonte-texto);
+            font-weight: 600;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            transition: opacity 0.2s;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        canvas {
+            background-color: var(--azul-marinho);
+            width: 360px;
+            height: 640px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(17, 33, 80, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="painel">
+            <h1>Gerador de Reels</h1>
+            <label>Roteiro do Vídeo:</label>
+            <textarea id="textoRoteiro" placeholder="Digite o texto do vídeo aqui..."></textarea>
+            
+            <button onclick="testarCanvas()">Testar Visual</button>
+            
+            <div style="margin-top: 20px;">
+                <label>Duração do Vídeo (em segundos):</label>
+                <input type="number" id="tempoVideo" value="15" min="5" max="60" style="width: 100%; box-sizing: border-box; padding: 10px; margin-top: 5px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ccc; font-family: var(--fonte-texto); font-size: 16px;">
+            </div>
+
+            <button id="btnGravar" onclick="gravarVideo()" style="background-color: var(--azul-marinho); color: var(--rose);">
+                Gravar e Baixar Vídeo
+            </button>
+        </div>
+        
+        <div class="preview">
+            <canvas id="videoCanvas" width="1080" height="1920"></canvas>
+        </div>
+    </div>
+
+    <!-- Todo o seu Cérebro (JavaScript) está agora aqui dentro -->
+    <script>
+        function testarCanvas() {
+            const canvas = document.getElementById('videoCanvas');
+            const ctx = canvas.getContext('2d');
+            const texto = document.getElementById('textoRoteiro').value;
+
+            ctx.fillStyle = '#112150';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (texto.trim() === '') return;
+
+            ctx.font = 'bold 80px "Cormorant Garamond"';
+            ctx.fillStyle = '#F4E7D8';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            const maxLargura = 900;
+            const alturaLinha = 100;
+            const x = canvas.width / 2;
+            let y = canvas.height / 2.2;
+
+            const palavras = texto.split(' ');
+            let linhaAtual = '';
+            let linhas = [];
+
+            for (let i = 0; i < palavras.length; i++) {
+                let testeLinha = linhaAtual + palavras[i] + ' ';
+                let metricas = ctx.measureText(testeLinha);
+                
+                if (metricas.width > maxLargura && i > 0) {
+                    linhas.push(linhaAtual);
+                    linhaAtual = palavras[i] + ' ';
+                } else {
+                    linhaAtual = testeLinha;
+                }
+            }
+            linhas.push(linhaAtual);
+
+            y = y - ((linhas.length - 1) * alturaLinha) / 2;
+
+            for (let j = 0; j < linhas.length; j++) {
+                ctx.fillText(linhas[j], x, y + (j * alturaLinha));
+            }
+
+            ctx.font = '600 45px "Plus Jakarta Sans"';
+            ctx.fillStyle = '#DCC591';
+            ctx.fillText('LEIA A LEGENDA 👇', canvas.width / 2, 1700);
+        }
+
+        window.onload = function() {
+            const canvas = document.getElementById('videoCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = '#112150';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.font = '600 45px "Plus Jakarta Sans"';
+            ctx.fillStyle = '#DCC591';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('LEIA A LEGENDA 👇', canvas.width / 2, 1700);
+        };
+
+        let gravador;
+        let pedacosVideo = [];
+
+        function gravarVideo() {
+            const canvas = document.getElementById('videoCanvas');
+            const btn = document.getElementById('btnGravar');
+            
+            const inputTempo = document.getElementById('tempoVideo').value;
+            const tempoEmSegundos = parseInt(inputTempo) || 15;
+            const tempoEmMilissegundos = tempoEmSegundos * 1000;
+            
+            testarCanvas();
+
+            if (document.getElementById('textoRoteiro').value.trim() === '') {
+                alert("Digite um texto antes de gravar!");
+                return;
+            }
+
+            btn.innerText = `🔴 A gravar... Aguarde (${tempoEmSegundos}s)`;
+            btn.style.backgroundColor = "red";
+            btn.style.color = "white";
+            btn.disabled = true;
+
+            const stream = canvas.captureStream(30);
+            gravador = new MediaRecorder(stream);
+            pedacosVideo = [];
+
+            gravador.ondataavailable = function(evento) {
+                if (evento.data.size > 0) {
+                    pedacosVideo.push(evento.data);
+                }
+            };
+
+            gravador.onstop = function() {
+                const blob = new Blob(pedacosVideo, { type: 'video/mp4' });
+                const url = URL.createObjectURL(blob);
+                
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `Reel_TalkFlow_${tempoEmSegundos}s.mp4`;
+                link.click();
+
+                btn.innerText = "Gravar e Baixar Vídeo";
+                btn.style.backgroundColor = "var(--azul-marinho)";
+                btn.style.color = "var(--rose)";
+                btn.disabled = false;
+            };
+
+            gravador.start();
+
+            setTimeout(() => {
+                gravador.stop();
+            }, tempoEmMilissegundos);
+        }
+    </script>
+</body>
+</html>
