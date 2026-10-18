@@ -128,24 +128,24 @@
             <h1>🎬 Talk Flow Studio</h1>
             
             <div class="sessao">
-                <h3>1. Motor de Vídeo (Pexels)</h3>
-                <label>Sua API Key do Pexels (Gratuita):</label>
-                <input type="password" id="apiKey" placeholder="Cole sua chave aqui..." onchange="salvarChave()">
+                <h3>1. Motor de Vídeo (Pixabay)</h3>
+                <!-- A chave já fica preenchida e invisível para agilizar o uso diário -->
+                <input type="password" id="apiKey" value="58105159-93476e94447c8ebc125d91fae" style="display: none;">
                 
                 <label>Tema do Fundo (em inglês):</label>
                 <div style="display: flex; gap: 10px;">
-                    <input type="text" id="buscaPexels" placeholder="Ex: coffee, rain, study aesthetic" value="aesthetic coffee">
-                    <button class="btn-secundario" style="width: auto;" onclick="buscarVideoPexels()">Buscar Vídeo</button>
+                    <input type="text" id="buscaPixabay" placeholder="Ex: coffee, rain, study, city" value="coffee">
+                    <button class="btn-secundario" style="width: auto;" onclick="buscarVideoPixabay()">Buscar Vídeo</button>
                 </div>
-                <small id="statusVideo" style="color: green; font-weight: bold; display: none;">✓ Vídeo carregado com sucesso!</small>
+                <small id="statusVideo" style="color: green; font-weight: bold; display: none;">✓ Vídeo espetacular carregado!</small>
             </div>
 
             <div class="sessao">
                 <h3>2. Roteiro Cinematográfico</h3>
-                <label>Frase de Impacto 1 (Aparece no início - O Gancho):</label>
+                <label>Frase de Impacto 1 (O Gancho - Surge aos 0s):</label>
                 <textarea id="texto1" placeholder="Ex: Pare de traduzir tudo na sua cabeça."></textarea>
 
-                <label>Frase de Impacto 2 (Surge aos 3 segundos - A Virada):</label>
+                <label>Frase de Impacto 2 (A Virada - Surge aos 3s):</label>
                 <textarea id="texto2" placeholder="Ex: A fluência mora nos blocos sonoros."></textarea>
             </div>
             
@@ -170,58 +170,42 @@
         const ctx = canvas.getContext('2d');
         const motorVideo = document.getElementById('motorVideo');
         
-        // Recupera a chave salva para você não precisar digitar sempre
         window.onload = () => {
-            if(localStorage.getItem('pexelsKey')) {
-                document.getElementById('apiKey').value = localStorage.getItem('pexelsKey');
-            }
-            desenharFrameEstatico(); // Fundo azul marinho inicial
+            desenharFrameEstatico(); 
         };
 
-        function salvarChave() {
-            localStorage.setItem('pexelsKey', document.getElementById('apiKey').value);
-        }
-
         // ==========================================
-        // INTEGRAÇÃO PEXELS (Busca o vídeo B-roll)
+        // INTEGRAÇÃO PIXABAY (Busca Automática)
         // ==========================================
-        async function buscarVideoPexels() {
-            const query = document.getElementById('buscaPexels').value;
+        async function buscarVideoPixabay() {
+            const query = document.getElementById('buscaPixabay').value;
             const apiKey = document.getElementById('apiKey').value;
             const status = document.getElementById('statusVideo');
 
-            if(!apiKey) {
-                alert("Por favor, cole a sua API Key do Pexels primeiro.");
-                return;
-            }
-
             status.style.display = 'block';
             status.style.color = 'orange';
-            status.innerText = "A buscar vídeo...";
+            status.innerText = "A procurar vídeo cinematográfico...";
 
             try {
-                const response = await fetch(`https://api.pexels.com/videos/search?query=${query}&orientation=portrait&size=large&per_page=15`, {
-                    headers: { Authorization: apiKey }
-                });
-                
+                const url = `https://pixabay.com/api/videos/?key=${apiKey}&q=${encodeURIComponent(query)}&per_page=15`;
+                const response = await fetch(url);
                 const data = await response.json();
                 
-                if(data.videos && data.videos.length > 0) {
-                    // Sorteia um vídeo aleatório entre os primeiros resultados para não ser sempre igual
-                    const videoSorteado = data.videos[Math.floor(Math.random() * Math.min(5, data.videos.length))];
-                    // Pega o link do arquivo de vídeo HD
-                    const linkHD = videoSorteado.video_files.find(v => v.quality === 'hd' || v.quality === 'sd').link;
+                if(data.hits && data.hits.length > 0) {
+                    // Sorteia um dos 5 primeiros resultados para o fundo não ser sempre igual
+                    const videoSorteado = data.hits[Math.floor(Math.random() * Math.min(5, data.hits.length))];
+                    // Pega o URL do ficheiro de vídeo
+                    const linkVideo = videoSorteado.videos.medium.url;
                     
-                    motorVideo.src = linkHD;
+                    motorVideo.src = linkVideo;
                     motorVideo.load();
                     
                     status.style.color = 'green';
                     status.innerText = "✓ Vídeo espetacular carregado!";
                     
-                    // Mostra o primeiro frame para o utilizador ver o fundo
                     motorVideo.onloadeddata = () => {
                         motorVideo.currentTime = 0;
-                        setTimeout(() => desenharFrameAnimado(0), 200); // Dá um tempo para o frame carregar na memória
+                        setTimeout(() => desenharFrameAnimado(0), 200); 
                     };
                 } else {
                     status.style.color = 'red';
@@ -229,7 +213,7 @@
                 }
             } catch(e) {
                 status.style.color = 'red';
-                status.innerText = "Erro na API. Verifique a sua chave.";
+                status.innerText = "Erro na ligação com o Pixabay.";
             }
         }
 
@@ -238,7 +222,6 @@
         // ==========================================
         let loopId;
 
-        // Função para desenhar texto com quebra de linha
         function preencherTextoLongo(texto, x, y, opacidade) {
             ctx.fillStyle = `rgba(244, 231, 216, ${opacidade})`; // Rosé #F4E7D8
             ctx.font = 'bold 85px "Cormorant Garamond"';
@@ -261,7 +244,6 @@
             }
             linhas.push(linha);
             
-            // Centraliza o bloco no Y pedido
             let yAjustado = y - ((linhas.length - 1) * 110) / 2;
             for(let j = 0; j < linhas.length; j++) {
                 ctx.fillText(linhas[j], x, yAjustado + (j * 110));
@@ -269,9 +251,8 @@
         }
 
         function desenharFrameAnimado(tempoDecorrido) {
-            // 1. Desenha o fundo (Vídeo ou Azul Sólido se não houver vídeo)
-            if (motorVideo.readyState >= 2) { // Vídeo carregado
-                // Cover ratio math
+            // 1. Desenha o fundo Cinematográfico
+            if (motorVideo.readyState >= 2) { 
                 const canvasRatio = canvas.width / canvas.height;
                 const videoRatio = motorVideo.videoWidth / motorVideo.videoHeight;
                 let sx, sy, sWidth, sHeight;
@@ -289,29 +270,29 @@
                 }
                 ctx.drawImage(motorVideo, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
                 
-                // Película Azul Marinho (65% de transparência para contraste cinematográfico)
+                // Película Azul Marinho (65% de opacidade para elegância e leitura)
                 ctx.fillStyle = 'rgba(17, 33, 80, 0.65)'; 
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             } else {
                 desenharFrameEstatico();
             }
 
-            // 2. O Rodapé Fixo (Sempre visível)
+            // 2. Rodapé Fixo
             ctx.font = '600 45px "Plus Jakarta Sans"';
             ctx.fillStyle = '#DCC591'; // Dourado
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText('LEIA A LEGENDA 👇', canvas.width / 2, 1750);
 
-            // 3. Efeito Fade-in do Roteiro
+            // 3. Efeito Fade-in do Roteiro (Estilo _boladecristal)
             const txt1 = document.getElementById('texto1').value;
             const txt2 = document.getElementById('texto2').value;
 
-            // Frase 1 surge suavemente no primeiro segundo (0s a 1.5s)
+            // Frase 1 surge de 0s a 1.5s
             let opacidade1 = Math.min(1, tempoDecorrido / 1.5);
             if(txt1) preencherTextoLongo(txt1, canvas.width / 2, 600, opacidade1);
 
-            // Frase 2 surge suavemente após os 3 segundos (3s a 4.5s)
+            // Frase 2 surge de 3s a 4.5s
             if(tempoDecorrido >= 3) {
                 let opacidade2 = Math.min(1, (tempoDecorrido - 3) / 1.5);
                 if(txt2) preencherTextoLongo(txt2, canvas.width / 2, 1200, opacidade2);
@@ -324,12 +305,16 @@
         }
 
         function loopRenderizacao() {
-            if(motorVideo.paused && !gravandoFlag) return; // Poupa CPU se estiver parado
+            if(motorVideo.paused && !gravandoFlag) return; 
             desenharFrameAnimado(motorVideo.currentTime);
             loopId = requestAnimationFrame(loopRenderizacao);
         }
 
         function testarAnimacao() {
+            if(!motorVideo.src) {
+                alert("Busque um vídeo de fundo primeiro!");
+                return;
+            }
             cancelAnimationFrame(loopId);
             motorVideo.currentTime = 0;
             motorVideo.play();
@@ -357,13 +342,12 @@
             btn.style.color = "white";
             btn.disabled = true;
 
-            // Prepara a tela
             motorVideo.currentTime = 0;
             motorVideo.play();
             cancelAnimationFrame(loopId);
-            loopRenderizacao(); // Começa o motor 
+            loopRenderizacao(); 
 
-            const stream = canvas.captureStream(30); // Grava a 30 FPS suaves
+            const stream = canvas.captureStream(30); 
             gravador = new MediaRecorder(stream, { mimeType: 'video/mp4' });
             let pedacosVideo = [];
 
@@ -388,7 +372,6 @@
 
             gravador.start();
 
-            // Pára exatamente no tempo escolhido
             setTimeout(() => { gravador.stop(); }, tempoEmSegundos * 1000);
         }
     </script>
