@@ -8,7 +8,9 @@ export default async function handler(req, res) {
     const voiceId = "21m00Tcm4TlvDq8ikWAM"; // Rachel
 
     try {
-        const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`, {
+        const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
+        
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'xi-api-key': apiKey,
@@ -18,20 +20,25 @@ export default async function handler(req, res) {
             body: JSON.stringify({
                 text: texto,
                 model_id: "eleven_multilingual_v2",
-                voice_settings: { stability: 0.45, similarity_boost: 0.75 }
+                voice_settings: {
+                    stability: 0.5,
+                    similarity_boost: 0.75
+                }
             })
         });
 
         if (!response.ok) {
-            const erroDetalhe = await response.text();
-            throw new Error(`Erro na ElevenLabs: ${erroDetalhe}`);
+            const erroTexto = await response.text();
+            return res.status(500).json({ erro: `Erro ElevenLabs: ${erroTexto}` });
         }
 
         const arrayBuffer = await response.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
 
         res.setHeader('Content-Type', 'audio/mpeg');
+        res.setHeader('Cache-Control', 'no-cache');
         return res.status(200).send(buffer);
+
     } catch (error) {
         return res.status(500).json({ erro: error.message });
     }
