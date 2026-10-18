@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Reels - Talk Flow</title>
+    <title>Gerador Cinematic - Talk Flow</title>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Plus+Jakarta+Sans:wght@400;600&display=swap" rel="stylesheet">
     
     <style>
@@ -24,8 +24,8 @@
         }
         .container {
             display: flex;
-            gap: 50px;
-            max-width: 1000px;
+            gap: 40px;
+            max-width: 1200px;
             width: 100%;
             align-items: flex-start;
         }
@@ -34,198 +34,353 @@
             background: white;
             padding: 30px;
             border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(17, 33, 80, 0.1);
+            box-shadow: 0 4px 20px rgba(17, 33, 80, 0.08);
         }
         h1 {
             color: var(--azul-marinho);
             font-family: var(--fonte-titulo);
             margin-top: 0;
+            font-size: 32px;
+            border-bottom: 2px solid var(--rose);
+            padding-bottom: 10px;
         }
-        textarea {
+        .sessao {
+            background-color: #fcfcfc;
+            border: 1px solid #eee;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .sessao h3 {
+            margin-top: 0;
+            color: var(--azul-marinho);
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 14px;
+            color: #555;
+        }
+        input[type="text"], input[type="password"], input[type="number"], textarea {
             width: 100%;
             box-sizing: border-box;
-            height: 150px;
-            margin-top: 10px;
-            margin-bottom: 20px;
-            padding: 15px;
-            font-family: var(--fonte-texto);
+            padding: 10px;
+            border-radius: 6px;
             border: 1px solid #ccc;
-            border-radius: 8px;
-            resize: vertical;
+            font-family: var(--fonte-texto);
+            font-size: 15px;
+            margin-bottom: 10px;
         }
-        button {
-            background-color: var(--dourado);
-            color: var(--azul-marinho);
+        textarea { height: 80px; resize: vertical; }
+        .btn-secundario {
+            background-color: #eee;
+            color: #333;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
             font-family: var(--fonte-texto);
             font-weight: 600;
+            width: 100%;
+        }
+        .btn-primario {
+            background-color: var(--azul-marinho);
+            color: var(--rose);
             border: none;
             padding: 15px 30px;
             border-radius: 8px;
             cursor: pointer;
+            font-family: var(--fonte-texto);
+            font-weight: 600;
             font-size: 16px;
             width: 100%;
-            transition: opacity 0.2s;
-            margin-bottom: 10px;
+            transition: 0.3s;
+            margin-top: 10px;
         }
-        button:hover {
-            opacity: 0.9;
-        }
-        canvas {
-            background-color: var(--azul-marinho);
+        .btn-primario:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(17,33,80,0.2); }
+        .btn-secundario:hover { background-color: #ddd; }
+        
+        .preview {
+            position: relative;
+            background: #000;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(17, 33, 80, 0.5);
             width: 360px;
             height: 640px;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(17, 33, 80, 0.4);
+            flex-shrink: 0;
         }
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        /* Vídeo oculto usado apenas como motor gráfico */
+        video { display: none; } 
     </style>
 </head>
 <body>
     <div class="container">
         <div class="painel">
-            <h1>Gerador de Reels</h1>
-            <label>Roteiro do Vídeo:</label>
-            <textarea id="textoRoteiro" placeholder="Digite o texto do vídeo aqui..."></textarea>
+            <h1>🎬 Talk Flow Studio</h1>
             
-            <button onclick="testarCanvas()">Testar Visual (Ver Tudo)</button>
-            
-            <div style="margin-top: 10px;">
-                <label>Duração do Vídeo (em segundos):</label>
-                <input type="number" id="tempoVideo" value="10" min="5" max="60" style="width: 100%; box-sizing: border-box; padding: 10px; margin-top: 5px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ccc; font-family: var(--fonte-texto); font-size: 16px;">
+            <div class="sessao">
+                <h3>1. Motor de Vídeo (Pexels)</h3>
+                <label>Sua API Key do Pexels (Gratuita):</label>
+                <input type="password" id="apiKey" placeholder="Cole sua chave aqui..." onchange="salvarChave()">
+                
+                <label>Tema do Fundo (em inglês):</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="buscaPexels" placeholder="Ex: coffee, rain, study aesthetic" value="aesthetic coffee">
+                    <button class="btn-secundario" style="width: auto;" onclick="buscarVideoPexels()">Buscar Vídeo</button>
+                </div>
+                <small id="statusVideo" style="color: green; font-weight: bold; display: none;">✓ Vídeo carregado com sucesso!</small>
             </div>
 
-            <button id="btnGravar" onclick="gravarVideoAnimado()" style="background-color: var(--azul-marinho); color: var(--rose);">
-                Gravar Vídeo Animado 🎬
-            </button>
+            <div class="sessao">
+                <h3>2. Roteiro Cinematográfico</h3>
+                <label>Frase de Impacto 1 (Aparece no início - O Gancho):</label>
+                <textarea id="texto1" placeholder="Ex: Pare de traduzir tudo na sua cabeça."></textarea>
+
+                <label>Frase de Impacto 2 (Surge aos 3 segundos - A Virada):</label>
+                <textarea id="texto2" placeholder="Ex: A fluência mora nos blocos sonoros."></textarea>
+            </div>
+            
+            <div class="sessao">
+                <h3>3. Renderização</h3>
+                <label>Duração do Vídeo (segundos):</label>
+                <input type="number" id="tempoVideo" value="10" min="5" max="30">
+                
+                <button class="btn-secundario" onclick="testarAnimacao()">Testar Visual e Animação ▶️</button>
+                <button id="btnGravar" class="btn-primario" onclick="gravarCinematic()">Gravar Reel Definitivo 📥</button>
+            </div>
         </div>
         
         <div class="preview">
             <canvas id="videoCanvas" width="1080" height="1920"></canvas>
+            <video id="motorVideo" loop muted crossorigin="anonymous"></video>
         </div>
     </div>
 
     <script>
-        // Função principal que desenha o quadro (agora aceita um limite de palavras para criar o efeito de animação)
-        function desenharQuadro(texto, limitePalavras) {
-            const canvas = document.getElementById('videoCanvas');
-            const ctx = canvas.getContext('2d');
-            
-            // Fundo e CTA
-            ctx.fillStyle = '#112150';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.font = '600 45px "Plus Jakarta Sans"';
-            ctx.fillStyle = '#DCC591';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('LEIA A LEGENDA 👇', canvas.width / 2, 1700);
-
-            if (texto.trim() === '') return;
-
-            // Configuração da fonte principal
-            ctx.font = 'bold 80px "Cormorant Garamond"';
-            ctx.fillStyle = '#F4E7D8';
-
-            const maxLargura = 900;
-            const alturaLinha = 100;
-            const x = canvas.width / 2;
-            let y = canvas.height / 2.2;
-
-            const palavras = texto.split(' ');
-            let linhaAtual = '';
-            let linhasFull = [];
-
-            // Calcula onde cada linha deve ser quebrada (baseado no texto completo)
-            for (let i = 0; i < palavras.length; i++) {
-                let testeLinha = linhaAtual + palavras[i] + ' ';
-                let metricas = ctx.measureText(testeLinha);
-                
-                if (metricas.width > maxLargura && i > 0) {
-                    linhasFull.push(linhaAtual.trim());
-                    linhaAtual = palavras[i] + ' ';
-                } else {
-                    linhaAtual = testeLinha;
-                }
+        const canvas = document.getElementById('videoCanvas');
+        const ctx = canvas.getContext('2d');
+        const motorVideo = document.getElementById('motorVideo');
+        
+        // Recupera a chave salva para você não precisar digitar sempre
+        window.onload = () => {
+            if(localStorage.getItem('pexelsKey')) {
+                document.getElementById('apiKey').value = localStorage.getItem('pexelsKey');
             }
-            linhasFull.push(linhaAtual.trim());
-
-            // Centraliza o bloco de texto
-            y = y - ((linhasFull.length - 1) * alturaLinha) / 2;
-
-            // Desenha apenas a quantidade de palavras permitida pelo limiteAtual
-            let palavrasDesenhadas = 0;
-
-            for (let j = 0; j < linhasFull.length; j++) {
-                let palavrasDaLinha = linhasFull[j].split(' ');
-                let linhaParaDesenhar = [];
-                
-                for (let k = 0; k < palavrasDaLinha.length; k++) {
-                    if (palavrasDesenhadas < limitePalavras) {
-                        linhaParaDesenhar.push(palavrasDaLinha[k]);
-                        palavrasDesenhadas++;
-                    }
-                }
-                
-                if (linhaParaDesenhar.length > 0) {
-                    ctx.fillText(linhaParaDesenhar.join(' '), x, y + (j * alturaLinha));
-                }
-            }
-        }
-
-        // Mostra o texto todo de uma vez (para testar o visual)
-        function testarCanvas() {
-            const texto = document.getElementById('textoRoteiro').value;
-            desenharQuadro(texto, 9999); // Limite gigante para mostrar tudo
-        }
-
-        // Inicia com o fundo limpo
-        window.onload = function() {
-            desenharQuadro('', 0);
+            desenharFrameEstatico(); // Fundo azul marinho inicial
         };
 
-        let gravador;
-        let animacaoIntervalo;
+        function salvarChave() {
+            localStorage.setItem('pexelsKey', document.getElementById('apiKey').value);
+        }
 
-        function gravarVideoAnimado() {
-            const canvas = document.getElementById('videoCanvas');
-            const btn = document.getElementById('btnGravar');
-            const texto = document.getElementById('textoRoteiro').value;
-            const tempoEmSegundos = parseInt(document.getElementById('tempoVideo').value) || 10;
-            
-            if (texto.trim() === '') {
-                alert("Escreva um roteiro antes de gravar!");
+        // ==========================================
+        // INTEGRAÇÃO PEXELS (Busca o vídeo B-roll)
+        // ==========================================
+        async function buscarVideoPexels() {
+            const query = document.getElementById('buscaPexels').value;
+            const apiKey = document.getElementById('apiKey').value;
+            const status = document.getElementById('statusVideo');
+
+            if(!apiKey) {
+                alert("Por favor, cole a sua API Key do Pexels primeiro.");
                 return;
             }
 
-            btn.innerText = `🔴 A gravar... Aguarde (${tempoEmSegundos}s)`;
+            status.style.display = 'block';
+            status.style.color = 'orange';
+            status.innerText = "A buscar vídeo...";
+
+            try {
+                const response = await fetch(`https://api.pexels.com/videos/search?query=${query}&orientation=portrait&size=large&per_page=15`, {
+                    headers: { Authorization: apiKey }
+                });
+                
+                const data = await response.json();
+                
+                if(data.videos && data.videos.length > 0) {
+                    // Sorteia um vídeo aleatório entre os primeiros resultados para não ser sempre igual
+                    const videoSorteado = data.videos[Math.floor(Math.random() * Math.min(5, data.videos.length))];
+                    // Pega o link do arquivo de vídeo HD
+                    const linkHD = videoSorteado.video_files.find(v => v.quality === 'hd' || v.quality === 'sd').link;
+                    
+                    motorVideo.src = linkHD;
+                    motorVideo.load();
+                    
+                    status.style.color = 'green';
+                    status.innerText = "✓ Vídeo espetacular carregado!";
+                    
+                    // Mostra o primeiro frame para o utilizador ver o fundo
+                    motorVideo.onloadeddata = () => {
+                        motorVideo.currentTime = 0;
+                        setTimeout(() => desenharFrameAnimado(0), 200); // Dá um tempo para o frame carregar na memória
+                    };
+                } else {
+                    status.style.color = 'red';
+                    status.innerText = "Nenhum vídeo encontrado. Tente outro termo em inglês.";
+                }
+            } catch(e) {
+                status.style.color = 'red';
+                status.innerText = "Erro na API. Verifique a sua chave.";
+            }
+        }
+
+        // ==========================================
+        // MOTOR DE RENDERIZAÇÃO CINEMÁTICA
+        // ==========================================
+        let loopId;
+
+        // Função para desenhar texto com quebra de linha
+        function preencherTextoLongo(texto, x, y, opacidade) {
+            ctx.fillStyle = `rgba(244, 231, 216, ${opacidade})`; // Rosé #F4E7D8
+            ctx.font = 'bold 85px "Cormorant Garamond"';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            const palavras = texto.split(' ');
+            let linha = '';
+            let linhas = [];
+            
+            for(let n = 0; n < palavras.length; n++) {
+                let testeLinha = linha + palavras[n] + ' ';
+                let metricas = ctx.measureText(testeLinha);
+                if (metricas.width > 900 && n > 0) {
+                    linhas.push(linha);
+                    linha = palavras[n] + ' ';
+                } else {
+                    linha = testeLinha;
+                }
+            }
+            linhas.push(linha);
+            
+            // Centraliza o bloco no Y pedido
+            let yAjustado = y - ((linhas.length - 1) * 110) / 2;
+            for(let j = 0; j < linhas.length; j++) {
+                ctx.fillText(linhas[j], x, yAjustado + (j * 110));
+            }
+        }
+
+        function desenharFrameAnimado(tempoDecorrido) {
+            // 1. Desenha o fundo (Vídeo ou Azul Sólido se não houver vídeo)
+            if (motorVideo.readyState >= 2) { // Vídeo carregado
+                // Cover ratio math
+                const canvasRatio = canvas.width / canvas.height;
+                const videoRatio = motorVideo.videoWidth / motorVideo.videoHeight;
+                let sx, sy, sWidth, sHeight;
+
+                if (videoRatio > canvasRatio) {
+                    sHeight = motorVideo.videoHeight;
+                    sWidth = sHeight * canvasRatio;
+                    sx = (motorVideo.videoWidth - sWidth) / 2;
+                    sy = 0;
+                } else {
+                    sWidth = motorVideo.videoWidth;
+                    sHeight = sWidth / canvasRatio;
+                    sx = 0;
+                    sy = (motorVideo.videoHeight - sHeight) / 2;
+                }
+                ctx.drawImage(motorVideo, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
+                
+                // Película Azul Marinho (65% de transparência para contraste cinematográfico)
+                ctx.fillStyle = 'rgba(17, 33, 80, 0.65)'; 
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            } else {
+                desenharFrameEstatico();
+            }
+
+            // 2. O Rodapé Fixo (Sempre visível)
+            ctx.font = '600 45px "Plus Jakarta Sans"';
+            ctx.fillStyle = '#DCC591'; // Dourado
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('LEIA A LEGENDA 👇', canvas.width / 2, 1750);
+
+            // 3. Efeito Fade-in do Roteiro
+            const txt1 = document.getElementById('texto1').value;
+            const txt2 = document.getElementById('texto2').value;
+
+            // Frase 1 surge suavemente no primeiro segundo (0s a 1.5s)
+            let opacidade1 = Math.min(1, tempoDecorrido / 1.5);
+            if(txt1) preencherTextoLongo(txt1, canvas.width / 2, 600, opacidade1);
+
+            // Frase 2 surge suavemente após os 3 segundos (3s a 4.5s)
+            if(tempoDecorrido >= 3) {
+                let opacidade2 = Math.min(1, (tempoDecorrido - 3) / 1.5);
+                if(txt2) preencherTextoLongo(txt2, canvas.width / 2, 1200, opacidade2);
+            }
+        }
+
+        function desenharFrameEstatico() {
+            ctx.fillStyle = '#112150';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function loopRenderizacao() {
+            if(motorVideo.paused && !gravandoFlag) return; // Poupa CPU se estiver parado
+            desenharFrameAnimado(motorVideo.currentTime);
+            loopId = requestAnimationFrame(loopRenderizacao);
+        }
+
+        function testarAnimacao() {
+            cancelAnimationFrame(loopId);
+            motorVideo.currentTime = 0;
+            motorVideo.play();
+            loopRenderizacao();
+        }
+
+        // ==========================================
+        // GRAVAÇÃO E EXPORTAÇÃO
+        // ==========================================
+        let gravador;
+        let gravandoFlag = false;
+
+        function gravarCinematic() {
+            if(!motorVideo.src) {
+                alert("Busque um vídeo de fundo primeiro!");
+                return;
+            }
+
+            const btn = document.getElementById('btnGravar');
+            const tempoEmSegundos = parseInt(document.getElementById('tempoVideo').value) || 10;
+            
+            gravandoFlag = true;
+            btn.innerText = `🔴 Gravando Cinematografia... (${tempoEmSegundos}s)`;
             btn.style.backgroundColor = "red";
             btn.style.color = "white";
             btn.disabled = true;
 
-            const palavrasTotais = texto.split(' ').length;
-            let palavrasAtuais = 1;
-            
-            // Desenha a primeira palavra imediatamente
-            desenharQuadro(texto, palavrasAtuais);
+            // Prepara a tela
+            motorVideo.currentTime = 0;
+            motorVideo.play();
+            cancelAnimationFrame(loopId);
+            loopRenderizacao(); // Começa o motor 
 
-            // Inicia a captura de vídeo
-            const stream = canvas.captureStream(30); // 30 frames por segundo
-            gravador = new MediaRecorder(stream);
+            const stream = canvas.captureStream(30); // Grava a 30 FPS suaves
+            gravador = new MediaRecorder(stream, { mimeType: 'video/mp4' });
             let pedacosVideo = [];
 
-            gravador.ondataavailable = function(e) {
-                if (e.data.size > 0) pedacosVideo.push(e.data);
-            };
+            gravador.ondataavailable = e => { if (e.data.size > 0) pedacosVideo.push(e.data); };
 
-            gravador.onstop = function() {
-                clearInterval(animacaoIntervalo);
+            gravador.onstop = () => {
+                gravandoFlag = false;
+                motorVideo.pause();
                 
                 const blob = new Blob(pedacosVideo, { type: 'video/mp4' });
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
-                link.download = `Reel_TalkFlow_Animado.mp4`;
+                link.download = `TalkFlow_Cinematic.mp4`;
                 link.click();
 
-                btn.innerText = "Gravar Vídeo Animado 🎬";
+                btn.innerText = "Gravar Reel Definitivo 📥";
                 btn.style.backgroundColor = "var(--azul-marinho)";
                 btn.style.color = "var(--rose)";
                 btn.disabled = false;
@@ -233,20 +388,8 @@
 
             gravador.start();
 
-            // Lógica de velocidade da animação: 
-            // O texto deve terminar de aparecer a 80% do vídeo, para sobrar tempo do aluno ler a frase completa no final.
-            const tempoParaAnimar = (tempoEmSegundos * 1000) * 0.8; 
-            const velocidadeMs = tempoParaAnimar / palavrasTotais;
-
-            animacaoIntervalo = setInterval(() => {
-                palavrasAtuais++;
-                desenharQuadro(texto, palavrasAtuais);
-            }, velocidadeMs);
-
-            // Para a gravação quando o tempo escolhido acabar
-            setTimeout(() => {
-                gravador.stop();
-            }, tempoEmSegundos * 1000);
+            // Pára exatamente no tempo escolhido
+            setTimeout(() => { gravador.stop(); }, tempoEmSegundos * 1000);
         }
     </script>
 </body>
